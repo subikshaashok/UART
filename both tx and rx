@@ -1,3 +1,25 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 16.06.2025 21:25:01
+// Design Name: 
+// Module Name: uart_top
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
 module uart_top (
     input clk,
     input reset,
@@ -10,7 +32,8 @@ module uart_top (
     output rx_done
 );
 
-uart_tx tx_inst (
+//  Transmitter
+uart_tx tx (
     .clk(clk),
     .reset(reset),
     .tx_start(tx_start),
@@ -19,7 +42,8 @@ uart_tx tx_inst (
     .tx_busy(tx_busy)
 );
 
-uart_rx rx_inst (
+//  Receiver
+uart_rx  (
     .clk(clk),
     .reset(reset),
     .rx(rx),
@@ -28,3 +52,4 @@ uart_rx rx_inst (
 );
 
 endmodule
+
