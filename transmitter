@@ -1,0 +1,68 @@
+module uart_tx (
+    input clk,               // System clock (e.g., 100MHz)
+    input reset,             // Active-high reset
+    input tx_start,          // Start transmission signal
+    input [7:0] data_in,     // 8-bit data to transmit
+    output reg tx,           // Serial TX output
+    output reg tx_busy       // High when transmission is ongoing
+);
+
+// Clock cycles per bit (for 9600 baud rate @ 100MHz clock)
+parameter CLK_PER_BIT = 10416;
+
+reg [13:0] clk_count;        // Counts clock cycles per bit
+reg [3:0] bit_index;         // Index for 10 bits (1 start + 8 data + 1 stop)
+reg [9:0] tx_shift_reg;      // Shift register holding full transmit frame
+
+// State definitions
+typedef enum reg [1:0] {IDLE, START, DATA, STOP} state_t;
+state_t state;
+
+always @(posedge clk or posedge reset) begin
+    if (reset) begin
+        // Reset all states and outputs
+        state <= IDLE;
+        clk_count <= 0;
+        bit_index <= 0;
+        tx <= 1'b1;           // Idle state for UART line is high
+        tx_busy <= 0;
+    end else begin
+        case (state)
+        
+            IDLE: begin
+                tx <= 1'b1;
+                clk_count <= 0;
+                bit_index <= 0;
+                tx_busy <= 0;
+
+                // Start transmission when tx_start is high
+                if (tx_start) begin
+                    // Format: [Stop Bit][Data Bits][Start Bit]
+                    tx_shift_reg <= {1'b1, data_in, 1'b0};  // 1 stop, 8 data, 1 start
+                    tx_busy <= 1;
+                    state <= START;
+                end
+            end
+
+            START, DATA, STOP: begin
+                // Wait until one bit time (CLK_PER_BIT)
+                if (clk_count < CLK_PER_BIT - 1)
+                    clk_count <= clk_count + 1;
+                else begin
+                    clk_count <= 0;
+
+                    // Transmit the current bit from shift register
+                    tx <= tx_shift_reg[bit_index];
+                    bit_index <= bit_index + 1;
+
+                    // After sending all 10 bits, return to IDLE
+                    if (bit_index == 9)
+                        state <= IDLE;
+                end
+            end
+
+        endcase
+    end
+end
+
+endmodule
